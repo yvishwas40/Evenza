@@ -94,6 +94,12 @@ export const messageAPI = {
     api.get(`/messages/event/${eventId}`),
   completeSurvey: (attendeeId: string) =>
     api.post(`/messages/survey-completed/${attendeeId}`),
+  createAnnouncement: (data: any) => api.post('/messages/announcement', data),
+  getPublicMessages: (eventId: string) =>
+    api.get(`/messages/public/${eventId}`),
+  getUserUnreadMessages: () => api.get('/messages/user/unread'),
+  markMessagesSeen: (messageIds: string[]) =>
+    api.post('/messages/user/mark-seen', { messageIds }),
 };
 
 export const gsheetAPI = {

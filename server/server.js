@@ -4,6 +4,8 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import http from 'http';
+import { Server as IOServer } from 'socket.io';
 
 import authRoutes from './routes/auth.js';
 import eventRoutes from './routes/events.js';
@@ -35,6 +37,38 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+// Create HTTP server and attach Socket.IO
+const server = http.createServer(app);
+const io = new IOServer(server, {
+  cors: {
+    origin: process.env.CLIENT_URL || 'http://localhost:5173',
+    methods: ['GET', 'POST']
+  }
+});
+
+// Make io accessible in routes
+app.set('io', io);
+
+// Basic socket handlers
+io.on('connection', (socket) => {
+  console.log('Socket connected:', socket.id);
+
+  socket.on('join-events', (eventIds = []) => {
+    try {
+      eventIds.forEach((eid) => {
+        const room = `event_${eid}`;
+        socket.join(room);
+      });
+    } catch (err) {
+      console.error('join-events error', err);
+    }
+  });
+
+  socket.on('disconnect', () => {
+    console.log('Socket disconnected:', socket.id);
+  });
+});
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/events', eventRoutes);
@@ -50,8 +84,7 @@ app.get('/test', (req, res) => {
   res.json({ message: 'Server is working!', timestamp: new Date().toISOString() });
 });
 
-// MongoDB connection is handled by connectDB() function
-
-app.listen(PORT, () => {
+// Start server (use http server)
+server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });

@@ -2,6 +2,7 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Calendar, LogOut, BarChart3, User } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import NotificationBell from './NotificationBell';
 
 const Header: React.FC = () => {
   const { admin, user, logout } = useAuth();
@@ -42,6 +43,7 @@ const Header: React.FC = () => {
                       <span>Dashboard</span>
                     </Link>
                     <div className="flex items-center space-x-3">
+                      <NotificationBell />
                       <div className="text-sm">
                         <div className="text-gray-900 font-medium">{user.name}</div>
                         <div className="text-gray-500 text-xs">{user.email}</div>
@@ -109,6 +111,7 @@ const Header: React.FC = () => {
             {!isAdminRoute ? (
               user ? (
                 <div className="flex items-center space-x-2">
+                  <NotificationBell />
                   <Link 
                     to="/dashboard" 
                     className="bg-blue-600 text-white px-3 py-2 rounded-lg text-sm font-medium"

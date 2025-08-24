@@ -13,7 +13,8 @@ const messageSchema = new mongoose.Schema({
   },
   recipient: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Attendee'
+    ref: 'Attendee',
+    required: false // Allow messages without specific recipients (public announcements)
   },
   type: {
     type: String,

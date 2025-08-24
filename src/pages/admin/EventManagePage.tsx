@@ -5,7 +5,7 @@ import {
   Calendar, MapPin, Settings, Download,
   CheckCircle, AlertCircle, TrendingUp, Trash2
 } from 'lucide-react';
-import { eventAPI, attendeeAPI, checkinAPI } from '../../utils/api';
+import { eventAPI, attendeeAPI, checkinAPI, messageAPI } from '../../utils/api';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import QRScanner from '../../components/common/QRScanner';
 import toast from 'react-hot-toast';
@@ -513,16 +513,177 @@ const CheckinTab: React.FC<{
   </div>
 );
 
-const MessagingTab: React.FC<{ eventId: string }> = ({ eventId }) => (
-  <div className="space-y-6">
-    <div className="text-center py-8">
-      <MessageSquare className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-      <h3 className="text-xl font-semibold text-gray-900 mb-2">Messaging Center</h3>
-      <p className="text-gray-600">
-        Send broadcasts, reminders, and surveys to your attendees
-      </p>
+const MessagingTab: React.FC<{ eventId: string }> = ({ eventId }) => {
+  const [messages, setMessages] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showCreateMessage, setShowCreateMessage] = useState(false);
+  const [newMessage, setNewMessage] = useState({ subject: '', content: '' });
+  const [sending, setSending] = useState(false);
+
+  useEffect(() => {
+    fetchMessages();
+  }, [eventId]);
+
+  const fetchMessages = async () => {
+    try {
+      const response = await messageAPI.getEventMessages(eventId);
+      setMessages(response.data);
+    } catch (error) {
+      console.error('Error fetching messages:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateAnnouncement = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newMessage.subject.trim() || !newMessage.content.trim()) {
+      toast.error('Please fill in both subject and content');
+      return;
+    }
+
+    setSending(true);
+    try {
+      await messageAPI.createAnnouncement({
+        eventId,
+        subject: newMessage.subject,
+        content: newMessage.content
+      });
+      
+      toast.success('Announcement posted successfully!');
+      setNewMessage({ subject: '', content: '' });
+      setShowCreateMessage(false);
+      fetchMessages(); // Refresh messages list
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to create announcement');
+    } finally {
+      setSending(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <LoadingSpinner />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-xl font-semibold text-gray-900">Event Announcements</h3>
+          <p className="text-gray-600">Post announcements that will be visible to all attendees</p>
+        </div>
+        <button
+          onClick={() => setShowCreateMessage(true)}
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
+        >
+          <MessageSquare className="h-4 w-4" />
+          <span>Create Announcement</span>
+        </button>
+      </div>
+
+      {/* Create Message Form */}
+      {showCreateMessage && (
+        <div className="bg-white border border-gray-200 rounded-lg p-6">
+          <h4 className="text-lg font-medium text-gray-900 mb-4">New Announcement</h4>
+          <form onSubmit={handleCreateAnnouncement} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Subject *
+              </label>
+              <input
+                type="text"
+                value={newMessage.subject}
+                onChange={(e) => setNewMessage({ ...newMessage, subject: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="Enter announcement subject"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Content *
+              </label>
+              <textarea
+                value={newMessage.content}
+                onChange={(e) => setNewMessage({ ...newMessage, content: e.target.value })}
+                rows={4}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="Write your announcement content here..."
+                required
+              />
+            </div>
+            <div className="flex items-center justify-end space-x-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowCreateMessage(false);
+                  setNewMessage({ subject: '', content: '' });
+                }}
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={sending}
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-2"
+              >
+                {sending && <LoadingSpinner size="sm" />}
+                <span>Post Announcement</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Messages List */}
+      <div className="space-y-4">
+        {messages.length === 0 ? (
+          <div className="text-center py-8">
+            <MessageSquare className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">No Announcements Yet</h3>
+            <p className="text-gray-600">
+              Create your first announcement to keep attendees informed
+            </p>
+          </div>
+        ) : (
+          messages.map((message) => (
+            <div key={message._id} className="bg-white border border-gray-200 rounded-lg p-6">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <h4 className="text-lg font-medium text-gray-900 mb-2">
+                    {message.subject}
+                  </h4>
+                  <p className="text-gray-600 mb-4 whitespace-pre-wrap">
+                    {message.content}
+                  </p>
+                  <div className="flex items-center text-sm text-gray-500">
+                    <span>Posted on {new Date(message.sentAt).toLocaleDateString()}</span>
+                    <span className="mx-2">•</span>
+                    <span>{new Date(message.sentAt).toLocaleTimeString()}</span>
+                  </div>
+                </div>
+                <div className="ml-4">
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                    message.type === 'broadcast' 
+                      ? 'bg-blue-100 text-blue-800' 
+                      : 'bg-gray-100 text-gray-800'
+                  }`}>
+                    {message.type === 'broadcast' ? 'Announcement' : message.type}
+                  </span>
+                </div>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 export default EventManagePage;

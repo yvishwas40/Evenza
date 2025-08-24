@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { 
   Calendar, MapPin, Clock, Users, DollarSign, Globe, 
-  ArrowLeft, CheckCircle, AlertCircle, Share2, Heart, Edit
+  ArrowLeft, CheckCircle, AlertCircle, Share2, Heart, Edit, MessageSquare
 } from 'lucide-react';
-import { eventAPI, userAPI } from '../../utils/api';
+import { eventAPI, userAPI, messageAPI } from '../../utils/api';
 import { useAuth } from '../../context/AuthContext';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import RegistrationModal from '../../components/registration/RegistrationModal';
@@ -50,10 +50,13 @@ const EventDetailsPage: React.FC = () => {
     registration: any;
   } | null>(null);
   const [checkingRegistration, setCheckingRegistration] = useState(false);
+  const [messages, setMessages] = useState<any[]>([]);
+  const [messagesLoading, setMessagesLoading] = useState(false);
 
   useEffect(() => {
     if (id) {
       loadEvent(id);
+      loadMessages(id);
       if (isUser && user) {
         checkRegistrationStatus(id);
       }
@@ -69,6 +72,18 @@ const EventDetailsPage: React.FC = () => {
       toast.error('Event not found');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadMessages = async (eventId: string) => {
+    setMessagesLoading(true);
+    try {
+      const response = await messageAPI.getPublicMessages(eventId);
+      setMessages(response.data);
+    } catch (error) {
+      console.error('Error loading messages:', error);
+    } finally {
+      setMessagesLoading(false);
     }
   };
 
@@ -354,6 +369,43 @@ const EventDetailsPage: React.FC = () => {
                     </div>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {/* Announcements */}
+            {messages.length > 0 && (
+              <div className="bg-white rounded-2xl shadow-lg p-8">
+                <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center space-x-2">
+                  <MessageSquare className="h-6 w-6 text-blue-600" />
+                  <span>Event Announcements</span>
+                </h2>
+                {messagesLoading ? (
+                  <div className="flex items-center justify-center py-4">
+                    <LoadingSpinner />
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {messages.map((message) => (
+                      <div key={message._id} className="border-l-4 border-blue-500 bg-blue-50 p-4 rounded-r-lg">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <h3 className="font-semibold text-gray-900 mb-2">
+                              {message.subject}
+                            </h3>
+                            <p className="text-gray-700 mb-3 whitespace-pre-wrap">
+                              {message.content}
+                            </p>
+                            <div className="flex items-center text-sm text-gray-500">
+                              <span>{new Date(message.sentAt).toLocaleDateString()}</span>
+                              <span className="mx-2">•</span>
+                              <span>{new Date(message.sentAt).toLocaleTimeString()}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
