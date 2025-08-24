@@ -89,9 +89,12 @@ const CreateEventPage: React.FC = () => {
         const value = data[key as keyof EventForm];
         if (value !== undefined && value !== '') {
           if (key === 'tags') {
-            formData.append(key, JSON.stringify(value.split(',').map(tag => tag.trim()).filter(Boolean)));
+            // Ensure we treat the value as string before calling split
+            const tagsStr = String(value || '');
+            const tagsArray = tagsStr.split(',').map(tag => tag.trim()).filter(Boolean);
+            formData.append(key, JSON.stringify(tagsArray));
           } else {
-            formData.append(key, value.toString());
+            formData.append(key, String(value));
           }
         }
       });
