@@ -293,9 +293,31 @@ router.post('/user/mark-seen', authenticateToken, async (req, res) => {
   try {
     const { messageIds } = req.body;
 
-    // This endpoint is a placeholder. A full implementation would record per-user read status.
-    // For now, return success so frontend can mark locally.
-    res.json({ message: 'Messages marked as seen' });
+    if (!Array.isArray(messageIds) || messageIds.length === 0) {
+      return res.status(400).json({ message: 'messageIds must be a non-empty array' });
+    }
+
+    const userId = req.user.id;
+
+    // Find the attendee records for this user so we only update messages that actually belong to them
+    const userAttendees = await Attendee.find({ user: userId }).select('_id');
+    const attendeeIds = userAttendees.map(a => a._id);
+
+    if (!attendeeIds.length) {
+      return res.status(200).json({ message: 'No attendee records found for user', updated: 0 });
+    }
+
+    // Update only messages that belong to the user's attendee records
+    const result = await Message.updateMany(
+      { _id: { $in: messageIds }, recipient: { $in: attendeeIds } },
+      { $set: { isRead: true } }
+    );
+
+    // Mongoose may return different shapes depending on version
+    const updated = result.modifiedCount ?? result.nModified ?? 0;
+    const matched = result.matchedCount ?? result.n ?? 0;
+
+    res.json({ message: 'Messages marked as seen', matched, updated });
   } catch (error) {
     res.status(400).json({ message: error.message });
   }

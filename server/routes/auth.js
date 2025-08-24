@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import Admin from '../models/Admin.js';
 import User from '../models/User.js';
 import { authenticateToken } from '../middleware/auth.js';
+import { sendWelcomeEmail } from '../utils/email.js';
 
 const router = express.Router();
 
@@ -28,6 +29,9 @@ router.post('/register', async (req, res) => {
     await admin.save();
 
     const token = jwt.sign({ id: admin._id }, process.env.JWT_SECRET || 'fallback_secret', { expiresIn: '7d' });
+
+    // Send welcome email (fire-and-forget)
+    sendWelcomeEmail({ email: admin.email, name: admin.name }, 'admin').catch(err => console.error('Welcome email error (admin):', err));
 
     res.status(201).json({
       message: 'Admin registered successfully',
@@ -129,6 +133,9 @@ router.post('/user/register', async (req, res) => {
     });
 
     const token = jwt.sign({ id: user._id, role: 'user' }, process.env.JWT_SECRET || 'fallback_secret', { expiresIn: '7d' });
+
+    // Send welcome email (fire-and-forget)
+    sendWelcomeEmail({ email: user.email, name: user.name }, 'user').catch(err => console.error('Welcome email error (user):', err));
 
     res.status(201).json({
       message: 'User registered successfully',

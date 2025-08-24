@@ -2,7 +2,8 @@ import nodemailer from 'nodemailer';
 
 // Create transporter
 const createTransporter = () => {
-  return nodemailer.createTransporter({
+  // Use correct nodemailer API createTransport
+  return nodemailer.createTransport({
     host: process.env.SMTP_HOST || 'smtp.gmail.com',
     port: process.env.SMTP_PORT || 587,
     secure: false,
@@ -204,5 +205,40 @@ export const sendSurveyEmail = async (attendee, event, surveyData) => {
   } catch (error) {
     console.error('Survey email error:', error);
     throw error;
+  }
+};
+
+export const sendWelcomeEmail = async (user, role = 'user') => {
+  try {
+    const transporter = createTransporter();
+    const mailOptions = {
+      from: process.env.SMTP_USER || 'demo@example.com',
+      to: user.email,
+      subject: `Welcome to Event Management Platform${role === 'admin' ? ' (Organizer)' : ''}`,
+      html: `
+        <div style="max-width:600px;margin:0 auto;font-family:Arial,sans-serif;">
+          <h2 style="color:#3B82F6;">Welcome${user.name ? `, ${user.name}` : ''}!</h2>
+          <p>Thank you for signing up as a ${role === 'admin' ? 'Organizer' : 'User'} on our Event Management platform.</p>
+          <p>Here are some helpful links to get started:</p>
+          <ul>
+            <li>${role === 'admin' ? '<strong>Organizer Dashboard</strong>: Manage events, attendees and announcements.' : '<strong>Browse Events</strong>: Explore and register for events.'}</li>
+            <li><a href="${process.env.CLIENT_URL || 'http://localhost:5173'}" style="color:#3B82F6;">Visit the platform</a></li>
+          </ul>
+          <p>If you have any questions, reply to this email and our support team will assist you.</p>
+          <p>Best regards,<br/>Event Management Team</p>
+        </div>
+      `
+    };
+
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('Welcome email would be sent:', mailOptions);
+      return { success: true, message: 'Welcome email logged (development mode)' };
+    }
+
+    await transporter.sendMail(mailOptions);
+    return { success: true, message: 'Welcome email sent' };
+  } catch (error) {
+    console.error('Welcome email error:', error);
+    return { success: false, message: error.message };
   }
 };
