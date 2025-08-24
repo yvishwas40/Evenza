@@ -22,6 +22,67 @@ A full-stack event management platform with admin and attendee features, real-ti
 - **Admin Dashboard:** Manage events, attendees, payments, and messages
 
 ---
+## 🧑‍💻 App Usage
+
+### For Attendees (Users)
+1. **Browse Events:**  
+   Visit the homepage to view all public events. Use the search bar to filter events by name or type.
+
+2. **Register for an Event:**  
+   Click on an event to view details. Use the registration form to sign up. You may be prompted to pay (Stripe integration) if the event requires payment.
+
+3. **Check Registration Status:**  
+   After registering, you can view your registrations in the "My Events" or "My Registrations" section.
+
+4. **Check-in at Event:**  
+   On the day of the event, use the QR code provided (or manual check-in) to mark your attendance.
+
+5. **Receive Messages & Announcements:**  
+   Stay updated with event announcements, surveys, and reminders sent by organizers. Unread messages will be highlighted in your dashboard.
+
+6. **Participate in Surveys:**  
+   Complete surveys sent by organizers to provide feedback or answer event-related questions.
+
+---
+
+### For Admins (Organizers)
+1. **Login to Admin Dashboard:**  
+   Access the admin login page and sign in with your credentials.
+
+2. **Create & Manage Events:**  
+   Use the dashboard to create new events, update existing ones, or delete events. Upload images and set event details.
+
+3. **Manage Attendees:**  
+   View the list of attendees for each event. Update attendee information, send reminders, or remove attendees as needed.
+
+4. **Monitor Payments:**  
+   Track payment status for each attendee. Issue refunds if necessary.
+
+5. **Check-in Management:**  
+   Monitor real-time check-in stats. Manually check-in attendees or scan QR codes at the event entrance.
+
+6. **Send Broadcasts & Announcements:**  
+   Communicate with all attendees via broadcasts, announcements, or surveys.
+
+7. **Google Sheets Integration:**  
+   Sync event data with Google Sheets for reporting or backup.
+
+---
+
+### General Navigation
+
+- **Home:** View all public events.
+- **Event Details:** Click any event for more info and registration.
+- **Login/Register:** Use the navigation bar to access authentication pages.
+- **Dashboard:** (Admins only) Manage all aspects of events and attendees.
+- **Profile/My Events:** (Users) View your registrations and event participation.
+
+---
+
+**Note:**  
+- Make sure to use the correct frontend and backend URLs as provided above.
+- For best experience, use the latest version of Chrome, Firefox, or Edge.
+
 
 ## 🛠️ Getting Started
 
