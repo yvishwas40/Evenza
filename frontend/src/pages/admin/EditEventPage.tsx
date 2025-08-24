@@ -127,7 +127,7 @@ const EditEventPage: React.FC = () => {
       if (currentEvent.poster) {
         const posterUrl = currentEvent.poster.startsWith('http') 
           ? currentEvent.poster 
-          : `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}${currentEvent.poster}`;
+          : `${import.meta.env.VITE_API_URL || 'https://evenza-sjtt.onrender.com'}${currentEvent.poster}`;
         setPreviewUrl(posterUrl);
       }
 
@@ -322,7 +322,7 @@ const EditEventPage: React.FC = () => {
                       setPoster(null);
                       setPreviewUrl(event.poster ? (event.poster.startsWith('http') 
                         ? event.poster 
-                        : `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}${event.poster}`) : null);
+                        : `${import.meta.env.VITE_API_URL || 'https://evenza-sjtt.onrender.com'}${event.poster}`) : null);
                     }}
                     className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
                   >

@@ -284,7 +284,7 @@ const EventCard: React.FC<{ event: Event }> = ({ event }) => {
       {event.poster && event.poster.trim() !== '' ? (
         <div className="relative h-48 overflow-hidden">
           <img
-            src={event.poster.startsWith('http') ? event.poster : `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}${event.poster}`}
+            src={event.poster.startsWith('http') ? event.poster : `${import.meta.env.VITE_API_URL || 'https://evenza-sjtt.onrender.com'}${event.poster}`}
             alt={event.title || 'Event poster'}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                           onError={(e) => {

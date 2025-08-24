@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Use .env variable or fallback
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_BASE = import.meta.env.VITE_API_URL || 'https://evenza-sjtt.onrender.com/api';
 
 export const api = axios.create({
   baseURL: API_BASE,

@@ -271,7 +271,7 @@ const UserDashboard: React.FC = () => {
                         <img
                           src={registration.event.poster.startsWith('http') 
                             ? registration.event.poster 
-                            : `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}${registration.event.poster}`}
+                            : `${import.meta.env.VITE_API_URL || 'https://evenza-sjtt.onrender.com'}${registration.event.poster}`}
                           alt={registration.event.title}
                           className="w-24 h-24 object-cover rounded-lg"
                         />

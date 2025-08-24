@@ -97,7 +97,7 @@ const NotificationBell: React.FC = () => {
       );
 
       // Determine socket URL (strip /api if present)
-      const base = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+      const base = import.meta.env.VITE_API_URL || 'https://evenza-sjtt.onrender.com/api';
       const SOCKET_URL = base.replace(/\/api\/?$/, '');
 
       const socket = io(SOCKET_URL, {

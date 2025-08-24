@@ -240,7 +240,7 @@ const EventDetailsPage: React.FC = () => {
 
   const posterUrl = event.poster?.startsWith('http')
     ? event.poster
-    : `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}${event.poster || ''}`;
+    : `${import.meta.env.VITE_API_URL || 'https://evenza-sjtt.onrender.com'}${event.poster || ''}`;
 
   const eventDate = new Date(event.date);
   const endDate = event.endDate ? new Date(event.endDate) : null;
