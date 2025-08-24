@@ -21,7 +21,12 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-connectDB();
+
+// Initialize database connection
+connectDB().catch(err => {
+  console.error('Failed to connect to database:', err);
+  process.exit(1);
+});
 
 // Middleware
 app.use(cors());
@@ -38,13 +43,12 @@ app.use('/api/checkin', checkinRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/gsheet', gsheetRoutes);
 
-// MongoDB Connection
-mongoose.connect(process.env.MONGODB_URI || {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
-.then(() => console.log('MongoDB connected'))
-.catch(err => console.error('MongoDB connection error:', err));
+// Test route to verify server is working
+app.get('/test', (req, res) => {
+  res.json({ message: 'Server is working!', timestamp: new Date().toISOString() });
+});
+
+// MongoDB connection is handled by connectDB() function
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

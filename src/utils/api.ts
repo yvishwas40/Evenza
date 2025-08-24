@@ -34,9 +34,13 @@ api.interceptors.response.use(
 export const eventAPI = {
   // Public endpoints
   getPublicEvents: () => api.get('/events/public'),
+  getAllPublicEvents: () => api.get('/events/public/all'),
   getPublicEvent: (id: string) => api.get(`/events/public/${id}`),
   searchEvents: (query: string, type?: string) =>
     api.get('/events/public/search', { params: { q: query, type } }),
+  
+  // Debug endpoint
+  debugAllEvents: () => api.get('/events/debug/all'),
 
   // Admin endpoints
   getEvents: () => api.get('/events'),

@@ -103,21 +103,10 @@ const EventDetailsPage: React.FC = () => {
       </div>
     );
   }
-    const loadEvent = async (eventId: string) => {
-    try {
-      const response = await eventAPI.getPublicEvent(eventId);
-      console.log('API response:', response); // <-- check this
-      setEvent(response.data);
-    } catch (error) {
-      console.error(error); // <-- see if error is thrown
-      toast.error('Event not found');
-    } finally {
-      setLoading(false);
-    }
-  };
+
   const posterUrl = event.poster?.startsWith('http')
     ? event.poster
-    : `${process.env.REACT_APP_API_BASE_URL || ''}${event.poster || ''}`;
+    : `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}${event.poster || ''}`;
 
   const eventDate = new Date(event.date);
   const endDate = event.endDate ? new Date(event.endDate) : null;

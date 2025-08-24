@@ -37,7 +37,10 @@ const upload = multer({
 // Get all published events (public)
 router.get('/public', async (req, res) => {
   try {
-    const events = await Event.find({ 
+    console.log('Fetching public events...');
+    
+    // First try to get future events
+    let events = await Event.find({ 
       status: 'published',
       date: { $gte: new Date() }
     })
@@ -45,8 +48,24 @@ router.get('/public', async (req, res) => {
     .sort({ date: 1 })
     .select('-appScriptUrl -gsheetId');
 
+    console.log(`Found ${events.length} future events`);
+
+    // If no future events, get all published events (including past ones)
+    if (events.length === 0) {
+      console.log('No future events found, getting all published events...');
+      events = await Event.find({ 
+        status: 'published'
+      })
+      .populate('organizer', 'name organization')
+      .sort({ date: 1 })
+      .select('-appScriptUrl -gsheetId');
+      
+      console.log(`Found ${events.length} total published events`);
+    }
+
     res.json(events);
   } catch (error) {
+    console.error('Error fetching public events:', error);
     res.status(400).json({ message: error.message });
   }
 });
@@ -83,13 +102,43 @@ router.get('/', authenticateToken, async (req, res) => {
 // Get all published events (including past ones)
 router.get('/public/all', async (req, res) => {
   try {
+    console.log('Fetching all public events...');
     const events = await Event.find({ status: 'published' })
       .populate('organizer', 'name organization')
       .sort({ date: 1 })
       .select('-appScriptUrl -gsheetId');
 
+    console.log(`Found ${events.length} published events`);
     res.json(events);
   } catch (error) {
+    console.error('Error fetching all public events:', error);
+    res.status(400).json({ message: error.message });
+  }
+});
+
+// Debug route to see all events in database
+router.get('/debug/all', async (req, res) => {
+  try {
+    console.log('Debug: Fetching all events...');
+    const allEvents = await Event.find({})
+      .populate('organizer', 'name organization')
+      .sort({ createdAt: -1 });
+
+    console.log(`Debug: Found ${allEvents.length} total events`);
+    console.log('Debug: Event statuses:', allEvents.map(e => ({ id: e._id, title: e.title, status: e.status, date: e.date })));
+
+    res.json({
+      total: allEvents.length,
+      events: allEvents.map(e => ({
+        id: e._id,
+        title: e.title,
+        status: e.status,
+        date: e.date,
+        organizer: e.organizer
+      }))
+    });
+  } catch (error) {
+    console.error('Debug: Error fetching all events:', error);
     res.status(400).json({ message: error.message });
   }
 });
@@ -105,7 +154,7 @@ router.get('/public/search', async (req, res) => {
       query.$or = [
         { title: { $regex: q, $options: 'i' } },
         { description: { $regex: q, $options: 'i' } },
-        { location: { $regex: q, $options: 'i' } }
+        { venue: { $regex: q, $options: 'i' } }
       ];
     }
 
