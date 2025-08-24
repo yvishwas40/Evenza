@@ -31,19 +31,23 @@ connectDB().catch(err => {
   process.exit(1);
 });
 
+// -------------------------
 // Middleware
-app.use(cors());
+// -------------------------
+app.use(cors()); // allow all origins
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Create HTTP server and attach Socket.IO
+// -------------------------
+// HTTP server & Socket.IO
+// -------------------------
 const server = http.createServer(app);
 const io = new IOServer(server, {
   cors: {
-    origin: process.env.CLIENT_URL || 'http://localhost:5173',
-    methods: ['GET', 'POST']
-  }
+    origin: '*',  // allow all origins
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+  },
 });
 
 // Make io accessible in routes
@@ -69,7 +73,9 @@ io.on('connection', (socket) => {
   });
 });
 
+// -------------------------
 // Routes
+// -------------------------
 app.use('/api/auth', authRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/attendees', attendeeRoutes);
@@ -79,12 +85,14 @@ app.use('/api/messages', messageRoutes);
 app.use('/api/gsheet', gsheetRoutes);
 app.use('/api/user', userRoutes);
 
-// Test route to verify server is working
+// Test route
 app.get('/test', (req, res) => {
   res.json({ message: 'Server is working!', timestamp: new Date().toISOString() });
 });
 
-// Start server (use http server)
+// -------------------------
+// Start server
+// -------------------------
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
