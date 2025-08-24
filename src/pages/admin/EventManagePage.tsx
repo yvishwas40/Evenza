@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, Users, DollarSign, QrCode, MessageSquare, 
-  Calendar, MapPin, Clock, Settings, Download, Mail,
-  CheckCircle, AlertCircle, TrendingUp
+  Calendar, MapPin, Settings, Download,
+  CheckCircle, AlertCircle, TrendingUp, Trash2
 } from 'lucide-react';
 import { eventAPI, attendeeAPI, checkinAPI } from '../../utils/api';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
@@ -37,6 +37,7 @@ interface Attendee {
 
 const EventManagePage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [event, setEvent] = useState<Event | null>(null);
   const [attendees, setAttendees] = useState<Attendee[]>([]);
   const [stats, setStats] = useState<any>(null);
@@ -44,6 +45,8 @@ const EventManagePage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [showQRScanner, setShowQRScanner] = useState(false);
   const [scannerLoading, setScannerLoading] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -106,6 +109,22 @@ const EventManagePage: React.FC = () => {
     }
   };
 
+  const handleDeleteEvent = async () => {
+    if (!id) return;
+    
+    setDeleteLoading(true);
+    try {
+      await eventAPI.deleteEvent(id);
+      toast.success('Event deleted successfully');
+      navigate('/admin/events');
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to delete event');
+    } finally {
+      setDeleteLoading(false);
+      setShowDeleteModal(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -135,7 +154,6 @@ const EventManagePage: React.FC = () => {
   }
 
   const eventDate = new Date(event.date);
-  const isUpcoming = eventDate > new Date();
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -185,6 +203,14 @@ const EventManagePage: React.FC = () => {
                 <Settings className="h-4 w-4" />
                 <span>Edit</span>
               </Link>
+
+              <button
+                onClick={() => setShowDeleteModal(true)}
+                className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors flex items-center space-x-2"
+              >
+                <Trash2 className="h-4 w-4" />
+                <span>Delete</span>
+              </button>
             </div>
           </div>
         </div>
@@ -304,6 +330,55 @@ const EventManagePage: React.FC = () => {
             onClose={() => setShowQRScanner(false)}
             isLoading={scannerLoading}
           />
+        )}
+
+        {/* Delete Confirmation Modal */}
+        {showDeleteModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-2xl p-6 max-w-md w-full mx-4">
+              <div className="flex items-center mb-4">
+                <div className="flex-shrink-0">
+                  <AlertCircle className="h-8 w-8 text-red-600" />
+                </div>
+                <div className="ml-3">
+                  <h3 className="text-lg font-medium text-gray-900">Delete Event</h3>
+                </div>
+              </div>
+              
+              <div className="mb-6">
+                <p className="text-sm text-gray-600">
+                  Are you sure you want to delete "{event?.title}"? This action cannot be undone and will also delete all associated registrations, check-ins, and payments.
+                </p>
+              </div>
+              
+              <div className="flex items-center justify-end space-x-4">
+                <button
+                  onClick={() => setShowDeleteModal(false)}
+                  disabled={deleteLoading}
+                  className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDeleteEvent}
+                  disabled={deleteLoading}
+                  className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors flex items-center space-x-2 disabled:opacity-50"
+                >
+                  {deleteLoading ? (
+                    <>
+                      <LoadingSpinner size="sm" />
+                      <span>Deleting...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="h-4 w-4" />
+                      <span>Delete Event</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </div>

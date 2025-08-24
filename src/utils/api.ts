@@ -103,3 +103,18 @@ export const gsheetAPI = {
   getAppScriptCode: (eventId: string) =>
     api.get(`/gsheet/appscript-code/${eventId}`),
 };
+
+export const userAPI = {
+  // User authentication
+  login: (email: string, password: string) =>
+    api.post('/auth/user/login', { email, password }),
+  register: (userData: any) => api.post('/auth/user/register', userData),
+  getProfile: () => api.get('/auth/user/me'),
+  
+  // User event registrations
+  getMyRegistrations: () => api.get('/user/registrations'),
+  getRegistrationDetails: (registrationId: string) => 
+    api.get(`/user/registrations/${registrationId}`),
+  checkEventRegistration: (eventId: string) =>
+    api.get(`/user/registration-status/${eventId}`),
+};

@@ -1,15 +1,18 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Header from './components/common/Header';
 import Footer from './components/common/Footer';
 import HomePage from './pages/public/HomePage';
 import EventDetailsPage from './pages/public/EventDetailsPage';
+import UserAuthPage from './pages/user/UserAuthPage';
+import UserDashboard from './pages/user/UserDashboard';
 import LoginPage from './pages/admin/LoginPage';
 import DashboardPage from './pages/admin/DashboardPage';
 import EventsPage from './pages/admin/EventsPage';
 import CreateEventPage from './pages/admin/CreateEventPage';
+import EditEventPage from './pages/admin/EditEventPage';
 import EventManagePage from './pages/admin/EventManagePage';
 import LoadingSpinner from './components/common/LoadingSpinner';
 
@@ -30,6 +33,23 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   return admin ? <>{children}</> : <Navigate to="/admin/login" />;
 };
 
+const UserProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user, loading } = useAuth();
+  
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <LoadingSpinner size="lg" />
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  return user ? <>{children}</> : <Navigate to="/login" />;
+};
+
 const AppRoutes: React.FC = () => {
   const { admin } = useAuth();
 
@@ -41,6 +61,17 @@ const AppRoutes: React.FC = () => {
           {/* Public Routes */}
           <Route path="/" element={<HomePage />} />
           <Route path="/event/:id" element={<EventDetailsPage />} />
+          
+          {/* User Routes */}
+          <Route path="/login" element={<UserAuthPage />} />
+          <Route 
+            path="/dashboard" 
+            element={
+              <UserProtectedRoute>
+                <UserDashboard />
+              </UserProtectedRoute>
+            } 
+          />
           
           {/* Admin Routes */}
           <Route 
@@ -68,6 +99,14 @@ const AppRoutes: React.FC = () => {
             element={
               <ProtectedRoute>
                 <CreateEventPage />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/admin/events/:id/edit" 
+            element={
+              <ProtectedRoute>
+                <EditEventPage />
               </ProtectedRoute>
             } 
           />

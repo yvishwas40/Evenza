@@ -1,10 +1,10 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Calendar, LogOut, Settings, BarChart3 } from 'lucide-react';
+import { Calendar, LogOut, BarChart3, User } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 const Header: React.FC = () => {
-  const { admin, logout } = useAuth();
+  const { admin, user, logout } = useAuth();
   const location = useLocation();
   const isAdminRoute = location.pathname.startsWith('/admin');
 
@@ -32,12 +32,45 @@ const Header: React.FC = () => {
                 >
                   Events
                 </Link>
-                <Link 
-                  to="/admin/login" 
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-all duration-200 font-medium shadow-sm hover:shadow-md"
-                >
-                  Organizer Login
-                </Link>
+                {user ? (
+                  <div className="flex items-center space-x-4">
+                    <Link 
+                      to="/dashboard" 
+                      className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-lg hover:bg-gray-50 transition-all duration-200 font-medium flex items-center space-x-2"
+                    >
+                      <User className="h-4 w-4" />
+                      <span>Dashboard</span>
+                    </Link>
+                    <div className="flex items-center space-x-3">
+                      <div className="text-sm">
+                        <div className="text-gray-900 font-medium">{user.name}</div>
+                        <div className="text-gray-500 text-xs">{user.email}</div>
+                      </div>
+                      <button
+                        onClick={logout}
+                        className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
+                        title="Logout"
+                      >
+                        <LogOut className="h-5 w-5" />
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center space-x-4">
+                    <Link 
+                      to="/login" 
+                      className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-lg hover:bg-gray-50 transition-all duration-200 font-medium"
+                    >
+                      Login
+                    </Link>
+                    <Link 
+                      to="/admin/login" 
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-all duration-200 font-medium shadow-sm hover:shadow-md"
+                    >
+                      Organizer Login
+                    </Link>
+                  </div>
+                )}
               </>
             ) : admin ? (
               <>
@@ -74,12 +107,29 @@ const Header: React.FC = () => {
           {/* Mobile menu button */}
           <div className="md:hidden">
             {!isAdminRoute ? (
-              <Link 
-                to="/admin/login" 
-                className="bg-blue-600 text-white px-3 py-2 rounded-lg text-sm font-medium"
-              >
-                Login
-              </Link>
+              user ? (
+                <div className="flex items-center space-x-2">
+                  <Link 
+                    to="/dashboard" 
+                    className="bg-blue-600 text-white px-3 py-2 rounded-lg text-sm font-medium"
+                  >
+                    Dashboard
+                  </Link>
+                  <button
+                    onClick={logout}
+                    className="p-2 text-gray-500 hover:text-red-600"
+                  >
+                    <LogOut className="h-5 w-5" />
+                  </button>
+                </div>
+              ) : (
+                <Link 
+                  to="/login" 
+                  className="bg-blue-600 text-white px-3 py-2 rounded-lg text-sm font-medium"
+                >
+                  Login
+                </Link>
+              )
             ) : admin ? (
               <button
                 onClick={logout}

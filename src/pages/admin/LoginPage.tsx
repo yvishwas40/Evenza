@@ -33,7 +33,7 @@ const LoginPage: React.FC = () => {
   const handleLogin = async (data: LoginForm) => {
     setLoading(true);
     try {
-      await login(data.email, data.password);
+      await login(data.email, data.password, 'admin');
       toast.success('Login successful!');
       navigate('/admin/dashboard');
     } catch (error: any) {
@@ -57,7 +57,7 @@ const LoginPage: React.FC = () => {
         password: data.password,
         organization: data.organization,
         phone: data.phone
-      });
+      }, 'admin');
       toast.success('Registration successful!');
       navigate('/admin/dashboard');
     } catch (error: any) {

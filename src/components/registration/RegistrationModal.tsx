@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { X, User, Mail, Phone, Building, Heart, Shield } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { X, User, Mail, Phone, Building, Heart, Shield, LogIn } from 'lucide-react';
 import { attendeeAPI } from '../../utils/api';
+import { useAuth } from '../../context/AuthContext';
 import LoadingSpinner from '../common/LoadingSpinner';
 import PaymentModal from '../payment/PaymentModal';
 import toast from 'react-hot-toast';
@@ -15,6 +17,20 @@ interface RegistrationModalProps {
     isVirtual: boolean;
   };
   onClose: () => void;
+  onSuccess?: () => void;
+  existingRegistration?: {
+    id: string;
+    name: string;
+    email: string;
+    phone: string;
+    organization?: string;
+    designation?: string;
+    dietaryRequirements?: string;
+    emergencyContactName?: string;
+    emergencyContactPhone?: string;
+    attendanceType?: 'physical' | 'virtual';
+  } | null;
+  isUpdate?: boolean;
 }
 
 interface RegistrationForm {
@@ -29,39 +45,132 @@ interface RegistrationForm {
   attendanceType: 'physical' | 'virtual';
 }
 
-const RegistrationModal: React.FC<RegistrationModalProps> = ({ event, onClose }) => {
+const RegistrationModal: React.FC<RegistrationModalProps> = ({ 
+  event, 
+  onClose, 
+  onSuccess,
+  existingRegistration = null, 
+  isUpdate = false 
+}) => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
   const [registrationData, setRegistrationData] = useState<any>(null);
   
-  const { register, handleSubmit, formState: { errors }, watch } = useForm<RegistrationForm>({
+  const { register, handleSubmit, formState: { errors }, watch, reset } = useForm<RegistrationForm>({
     defaultValues: {
       attendanceType: event.isVirtual ? 'virtual' : 'physical'
     }
   });
 
+  // Autofill form with user data if logged in, or existing registration if updating
+  useEffect(() => {
+    if (isUpdate && existingRegistration) {
+      reset({
+        name: existingRegistration.name || '',
+        email: existingRegistration.email || '',
+        phone: existingRegistration.phone || '',
+        organization: existingRegistration.organization || '',
+        designation: existingRegistration.designation || '',
+        dietaryRequirements: existingRegistration.dietaryRequirements || '',
+        emergencyContactName: existingRegistration.emergencyContactName || '',
+        emergencyContactPhone: existingRegistration.emergencyContactPhone || '',
+        attendanceType: existingRegistration.attendanceType || (event.isVirtual ? 'virtual' : 'physical')
+      });
+    } else if (user) {
+      reset({
+        name: user.name || '',
+        email: user.email || '',
+        phone: user.phone || '',
+        organization: user.company || '',
+        attendanceType: event.isVirtual ? 'virtual' : 'physical'
+      });
+    }
+  }, [user, reset, event.isVirtual, isUpdate, existingRegistration]);
+
+  // Check if user is logged in, if not show login prompt
+  if (!user) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+          <div className="text-center">
+            <LogIn className="h-16 w-16 text-blue-600 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Login Required</h2>
+            <p className="text-gray-600 mb-6">
+              Please log in to register for this event. Your profile information will be automatically filled in the registration form.
+            </p>
+            <div className="space-y-3">
+              <button
+                onClick={() => {
+                  navigate('/login', { 
+                    state: { 
+                      from: { pathname: window.location.pathname },
+                      eventId: event._id 
+                    } 
+                  });
+                }}
+                className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Login to Register
+              </button>
+              <button
+                onClick={onClose}
+                className="w-full bg-gray-100 text-gray-700 py-3 px-4 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const onSubmit = async (data: RegistrationForm) => {
+    if (!user) {
+      navigate('/login', { 
+        state: { 
+          from: { pathname: window.location.pathname },
+          eventId: event._id 
+        } 
+      });
+      return;
+    }
+
     setLoading(true);
     try {
       const payload = {
         ...data,
+        userId: user.id,
         emergencyContact: data.emergencyContactName && data.emergencyContactPhone ? {
           name: data.emergencyContactName,
           phone: data.emergencyContactPhone
         } : undefined
       };
 
-      const response = await attendeeAPI.register(event._id, payload);
-      setRegistrationData(response.data);
-
-      if (event.isPaid) {
-        setShowPayment(true);
-      } else {
-        toast.success('Registration successful! Check your email for confirmation.');
+      let response;
+      if (isUpdate && existingRegistration) {
+        // Update existing registration
+        response = await attendeeAPI.updateAttendee(existingRegistration.id, payload);
+        toast.success('Registration updated successfully!');
+        onSuccess?.();
         onClose();
+      } else {
+        // Create new registration
+        response = await attendeeAPI.register(event._id, payload);
+        setRegistrationData(response.data);
+
+        if (event.isPaid) {
+          setShowPayment(true);
+        } else {
+          toast.success('Registration successful! Check your email for confirmation.');
+          onSuccess?.();
+          onClose();
+        }
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Registration failed');
+      toast.error(error.response?.data?.message || `${isUpdate ? 'Update' : 'Registration'} failed`);
     } finally {
       setLoading(false);
     }
@@ -76,6 +185,7 @@ const RegistrationModal: React.FC<RegistrationModalProps> = ({ event, onClose })
         onClose={onClose}
         onSuccess={() => {
           toast.success('Registration and payment completed successfully!');
+          onSuccess?.();
           onClose();
         }}
       />
@@ -88,7 +198,9 @@ const RegistrationModal: React.FC<RegistrationModalProps> = ({ event, onClose })
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">Register for Event</h2>
+            <h2 className="text-2xl font-bold text-gray-900">
+              {isUpdate ? 'Update Registration' : 'Register for Event'}
+            </h2>
             <p className="text-gray-600">{event.title}</p>
           </div>
           <button
@@ -320,7 +432,10 @@ const RegistrationModal: React.FC<RegistrationModalProps> = ({ event, onClose })
             >
               {loading && <LoadingSpinner size="sm" />}
               <span>
-                {event.isPaid ? 'Continue to Payment' : 'Register Now'}
+                {isUpdate 
+                  ? 'Update Registration' 
+                  : (event.isPaid ? 'Continue to Payment' : 'Register Now')
+                }
               </span>
             </button>
           </div>

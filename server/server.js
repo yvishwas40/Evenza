@@ -12,6 +12,7 @@ import paymentRoutes from './routes/payments.js';
 import checkinRoutes from './routes/checkin.js';
 import messageRoutes from './routes/messages.js';
 import gsheetRoutes from './routes/gsheet.js';
+import userRoutes from './routes/user.js';
 import connectDB from './config/database.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -42,6 +43,7 @@ app.use('/api/payments', paymentRoutes);
 app.use('/api/checkin', checkinRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/gsheet', gsheetRoutes);
+app.use('/api/user', userRoutes);
 
 // Test route to verify server is working
 app.get('/test', (req, res) => {

@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { 
   Calendar, MapPin, Clock, Users, DollarSign, Globe, 
-  ArrowLeft, CheckCircle, AlertCircle, Share2, Heart
+  ArrowLeft, CheckCircle, AlertCircle, Share2, Heart, Edit
 } from 'lucide-react';
-import { eventAPI } from '../../utils/api';
+import { eventAPI, userAPI } from '../../utils/api';
+import { useAuth } from '../../context/AuthContext';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import RegistrationModal from '../../components/registration/RegistrationModal';
 import toast from 'react-hot-toast';
@@ -24,6 +25,7 @@ interface Event {
   attendeeCount: number;
   ticketPrice: number;
   isPaid: boolean;
+  registrationDeadline?: string;
   agenda: Array<{
     time: string;
     title: string;
@@ -39,15 +41,24 @@ interface Event {
 
 const EventDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const { user, isUser } = useAuth();
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
   const [showRegistration, setShowRegistration] = useState(false);
+  const [registrationStatus, setRegistrationStatus] = useState<{
+    isRegistered: boolean;
+    registration: any;
+  } | null>(null);
+  const [checkingRegistration, setCheckingRegistration] = useState(false);
 
   useEffect(() => {
     if (id) {
       loadEvent(id);
+      if (isUser && user) {
+        checkRegistrationStatus(id);
+      }
     }
-  }, [id]);
+  }, [id, isUser, user]);
 
   const loadEvent = async (eventId: string) => {
     try {
@@ -61,6 +72,26 @@ const EventDetailsPage: React.FC = () => {
     }
   };
 
+  const checkRegistrationStatus = async (eventId: string) => {
+    try {
+      setCheckingRegistration(true);
+      const response = await userAPI.checkEventRegistration(eventId);
+      setRegistrationStatus(response.data);
+    } catch (error) {
+      console.error('Error checking registration status:', error);
+    } finally {
+      setCheckingRegistration(false);
+    }
+  };
+
+  const handleRegistrationSuccess = () => {
+    // Refresh registration status after successful registration
+    if (id && isUser && user) {
+      checkRegistrationStatus(id);
+    }
+    setShowRegistration(false);
+  };
+
   const handleShare = async () => {
     try {
       await navigator.share({
@@ -72,6 +103,94 @@ const EventDetailsPage: React.FC = () => {
       navigator.clipboard.writeText(window.location.href);
       toast.success('Event link copied to clipboard!');
     }
+  };
+
+  const renderRegistrationButton = () => {
+    // Check if user is logged in
+    if (!isUser) {
+      return (
+        <div className="space-y-3">
+          <button
+            onClick={() => toast.error('Please login to register for this event')}
+            className="w-full py-4 px-6 rounded-xl font-semibold text-lg bg-gray-100 text-gray-500 cursor-not-allowed"
+          >
+            Login Required
+          </button>
+          <p className="text-center text-sm text-gray-500">
+            Please <Link to="/auth" className="text-blue-600 hover:underline">login</Link> to register for this event
+          </p>
+        </div>
+      );
+    }
+
+    // Check if event is full
+    if (isFull) {
+      return (
+        <button
+          disabled
+          className="w-full py-4 px-6 rounded-xl font-semibold text-lg bg-gray-100 text-gray-500 cursor-not-allowed"
+        >
+          Event Full
+        </button>
+      );
+    }
+
+    // Check if user is already registered
+    if (registrationStatus?.isRegistered) {
+      const registration = registrationStatus.registration;
+      const now = new Date();
+      const deadline = event?.registrationDeadline ? new Date(event.registrationDeadline) : null;
+      const canUpdate = registration.canUpdate && (!deadline || now <= deadline);
+
+      if (canUpdate) {
+        return (
+          <button
+            onClick={() => setShowRegistration(true)}
+            className="w-full py-4 px-6 rounded-xl font-semibold text-lg bg-orange-600 hover:bg-orange-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center space-x-2"
+          >
+            <Edit className="h-5 w-5" />
+            <span>Update Registration</span>
+          </button>
+        );
+      } else {
+        return (
+          <button
+            disabled
+            className="w-full py-4 px-6 rounded-xl font-semibold text-lg bg-gray-100 text-gray-500 cursor-not-allowed"
+          >
+            Registration Closed
+          </button>
+        );
+      }
+    }
+
+    // Check registration deadline
+    const now = new Date();
+    const deadline = event?.registrationDeadline ? new Date(event.registrationDeadline) : null;
+    if (deadline && now > deadline) {
+      return (
+        <button
+          disabled
+          className="w-full py-4 px-6 rounded-xl font-semibold text-lg bg-gray-100 text-gray-500 cursor-not-allowed"
+        >
+          Registration Deadline Passed
+        </button>
+      );
+    }
+
+    // Normal registration button
+    return (
+      <button
+        onClick={() => setShowRegistration(true)}
+        className={`w-full py-4 px-6 rounded-xl font-semibold text-lg transition-all duration-200 ${
+          isAlmostFull
+            ? 'bg-red-600 hover:bg-red-700 text-white shadow-lg hover:shadow-xl'
+            : 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl'
+        }`}
+      >
+        Register Now
+      </button>
+    );
   };
 
   if (loading) {
@@ -289,24 +408,26 @@ const EventDetailsPage: React.FC = () => {
               </div>
 
               {/* Registration Button */}
-              <button
-                onClick={() => setShowRegistration(true)}
-                disabled={isFull}
-                className={`w-full py-4 px-6 rounded-xl font-semibold text-lg transition-all duration-200 ${
-                  isFull
-                    ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
-                    : isAlmostFull
-                    ? 'bg-red-600 hover:bg-red-700 text-white shadow-lg hover:shadow-xl'
-                    : 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl'
-                }`}
-              >
-                {isFull ? 'Event Full' : 'Register Now'}
-              </button>
+              {renderRegistrationButton()}
 
-              {!isFull && (
+              {!isFull && !registrationStatus?.isRegistered && (
                 <p className="text-center text-sm text-gray-500 mt-3">
                   {event.isPaid ? 'Secure payment required' : 'Free registration'}
                 </p>
+              )}
+
+              {registrationStatus?.isRegistered && (
+                <div className="mt-3 p-3 bg-green-50 rounded-lg">
+                  <div className="flex items-center space-x-2">
+                    <CheckCircle className="h-4 w-4 text-green-600" />
+                    <p className="text-sm text-green-800 font-medium">
+                      You're registered for this event
+                    </p>
+                  </div>
+                  <p className="text-xs text-green-600 mt-1">
+                    Registration date: {new Date(registrationStatus.registration.registrationDate).toLocaleDateString()}
+                  </p>
+                </div>
               )}
             </div>
 
@@ -364,6 +485,9 @@ const EventDetailsPage: React.FC = () => {
         <RegistrationModal
           event={event}
           onClose={() => setShowRegistration(false)}
+          existingRegistration={registrationStatus?.registration || null}
+          isUpdate={registrationStatus?.isRegistered || false}
+          onSuccess={handleRegistrationSuccess}
         />
       )}
     </div>

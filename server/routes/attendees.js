@@ -13,7 +13,7 @@ const router = express.Router();
 router.post('/register/:eventId', async (req, res) => {
   try {
     const { eventId } = req.params;
-    const { name, email, phone, organization, designation, dietaryRequirements, emergencyContact, attendanceType } = req.body;
+    const { name, email, phone, organization, designation, dietaryRequirements, emergencyContact, attendanceType, userId } = req.body;
 
     // Check if event exists and is published
     const event = await Event.findById(eventId);
@@ -47,6 +47,7 @@ router.post('/register/:eventId', async (req, res) => {
     // Create attendee
     const attendee = new Attendee({
       event: eventId,
+      user: userId || null, // Associate with user if logged in
       name,
       email,
       phone,
