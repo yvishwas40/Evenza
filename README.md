@@ -5,7 +5,7 @@ A full-stack event management platform with admin and attendee features, real-ti
 ---
 
 ## 🚀 Live Demo
-- **Frontend:** [https://evenza-2pms.vercel.app/(https://evenza-2pms.vercel.app/)]
+- **Frontend:** https://evenza-2pms.vercel.app/
 - **Backend:** https://evanza-eventmanagement.onrender.com/api
 
 ---
